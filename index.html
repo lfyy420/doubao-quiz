@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>探究世界的本质 · 判断+选词闯关</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>?</text></svg>">
+<style>
+  :root{
+    --bg1:#0f1e3d; --bg2:#1a2f5c;
+    --card:#ffffff; --ink:#1a2233; --ink-soft:#5a6478;
+    --brand:#2f54eb; --brand-deep:#1d39c4; --gold:#faad14;
+    --good:#52c41a; --good-bg:#f6ffed; --good-line:#b7eb8f;
+    --bad:#f5222d; --bad-bg:#fff2f0; --bad-line:#ffccc7;
+    --line:#e6e9f0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+    background:linear-gradient(160deg,var(--bg1) 0%,var(--bg2) 100%);
+    color:var(--ink);min-height:100vh;
+    display:flex;align-items:center;justify-content:center;padding:20px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .stage{width:100%;max-width:720px}
+  .card{background:var(--card);border-radius:20px;padding:32px 30px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+
+  .hero{text-align:center}
+  .hero .badge{display:inline-block;background:rgba(250,173,20,.15);color:var(--gold);
+    font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px;letter-spacing:1px;margin-bottom:18px}
+  .hero h1{font-size:26px;line-height:1.35;margin-bottom:10px}
+  .hero .sub{color:var(--ink-soft);font-size:14px;line-height:1.8;margin-bottom:20px}
+  .hero .rules{text-align:left;background:#f7f9fc;border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:var(--ink-soft);line-height:1.9}
+  .hero .rules b{color:var(--ink)}
+  .hero .stats{display:flex;justify-content:center;gap:24px;margin-bottom:22px}
+  .hero .stats .item{text-align:center}
+  .hero .stats .num{font-size:24px;font-weight:700;color:var(--brand)}
+  .hero .stats .lbl{font-size:12px;color:var(--ink-soft);margin-top:2px}
+
+  .btn{display:inline-block;border:none;cursor:pointer;font-family:inherit;font-size:16px;font-weight:600;
+    padding:13px 30px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-deep));
+    color:#fff;transition:transform .12s,box-shadow .12s;box-shadow:0 6px 18px rgba(47,84,235,.35)}
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(47,84,235,.45)}
+  .btn.ghost{background:#fff;color:var(--brand);border:2px solid var(--brand);box-shadow:none}
+  .btn.ghost:hover{background:#f0f5ff}
+  .btn.small{padding:8px 18px;font-size:14px}
+  .btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px}
+
+  .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;color:#fff}
+  .topbar .lv{font-size:14px;font-weight:600;opacity:.9}
+  .topbar .score{font-size:14px;opacity:.9}
+  .topbar .score b{color:var(--gold);font-size:18px}
+  .progress{height:8px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden;margin-bottom:22px}
+  .progress .bar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#ffd666);border-radius:99px;transition:width .35s}
+
+  .qcard .tag{display:inline-block;font-size:12px;font-weight:600;color:var(--brand);
+    background:#f0f5ff;padding:4px 10px;border-radius:6px;margin-bottom:12px}
+  .qcard .stem{font-size:20px;line-height:1.7;font-weight:600;margin-bottom:18px}
+  .answer-row{display:flex;gap:10px}
+  .answer-row input{flex:1;font-family:inherit;font-size:16px;padding:12px 14px;
+    border:2px solid var(--line);border-radius:12px;outline:none}
+  .answer-row input:focus{border-color:var(--brand)}
+
+  .feedback{margin-top:18px;border-radius:14px;padding:16px;display:none}
+  .feedback.show{display:block;animation:pop .3s ease}
+  .feedback.good{background:var(--good-bg);border:1px solid var(--good-line)}
+  .feedback.bad{background:var(--bad-bg);border:1px solid var(--bad-line)}
+  .feedback .verdict{font-size:15px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .feedback.good .verdict{color:var(--good)}
+  .feedback.bad .verdict{color:var(--bad)}
+  .feedback .verdict .dot{width:22px;height:22px;border-radius:50%;color:#fff;
+    display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+  .feedback.good .dot{background:var(--good)}
+  .feedback.bad .dot{background:var(--bad)}
+  .feedback .ans-line{font-size:14px;color:var(--ink)}
+
+  .blank-box{margin-top:16px;border-top:1px dashed var(--line);padding-top:16px;display:none}
+  .blank-box.show{display:block}
+  .blank-box .label{font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px}
+  .blank-sentence{font-size:16px;line-height:1.9;background:#f7f9fc;border-radius:10px;padding:14px 16px;margin-bottom:12px}
+  .blank-sentence .blank{color:var(--brand);font-weight:700;border-bottom:2px dashed var(--brand);padding:0 8px}
+  .blank-sentence .picked{color:var(--good)}
+  .options{display:flex;gap:10px;flex-wrap:wrap}
+  .option-btn{flex:1;min-width:90px;padding:11px 8px;border:2px solid var(--line);background:#fff;
+    border-radius:10px;cursor:pointer;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);transition:all .15s}
+  .option-btn:hover:not(:disabled){border-color:var(--brand);color:var(--brand)}
+  .option-btn.right{background:var(--good-bg);border-color:var(--good);color:var(--good)}
+  .option-btn.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .option-btn:disabled{cursor:default;opacity:.9}
+
+  .next-row{margin-top:16px;text-align:right;display:none}
+  .next-row.show{display:block}
+
+  /* 姓名输入 */
+  .name-input{width:100%;font-family:inherit;font-size:18px;padding:14px 16px;
+    border:2px solid var(--line);border-radius:12px;outline:none;text-align:center;margin-bottom:18px}
+  .name-input:focus{border-color:var(--brand)}
+
+  /* 上传状态 */
+  .upload-box{background:#f7f9fc;border:1px dashed var(--line);border-radius:12px;padding:14px 16px;margin:0 0 14px;font-size:14px}
+  .upload-box .ok{color:var(--good);font-weight:600}
+  .upload-box .err{color:var(--bad);font-weight:600}
+
+  /* 老师端 */
+  .teacher-area textarea{width:100%;min-height:120px;font-family:monospace;font-size:13px;
+    padding:12px;border:2px solid var(--line);border-radius:10px;outline:none;resize:vertical}
+  .teacher-area textarea:focus{border-color:var(--brand)}
+  table{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px;table-layout:fixed}
+  th,td{padding:10px 6px;text-align:center;border-bottom:1px solid var(--line);word-break:break-all}
+  th{background:#f7f9fc;font-weight:600;color:var(--ink)}
+  td.good{color:var(--good);font-weight:600}
+  td.bad{color:var(--bad);font-weight:600}
+  .rank-1{color:var(--gold);font-weight:700}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .stat-grid .box{background:#f7f9fc;border-radius:12px;padding:12px 6px;text-align:center}
+  .stat-grid .n{font-size:20px;font-weight:700;color:var(--brand)}
+  .stat-grid .l{font-size:12px;color:var(--ink-soft);margin-top:2px}
+
+  .result{text-align:center}
+  .result .trophy{font-size:52px;margin-bottom:8px}
+  .result h2{font-size:24px;margin-bottom:6px}
+  .result .desc{color:var(--ink-soft);font-size:14px;margin-bottom:18px}
+  .result .stars{font-size:30px;letter-spacing:6px;color:#d9d9d9;margin-bottom:18px}
+  .result .stars .on{color:var(--gold)}
+  .result .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+  .result .grid .box{background:#f7f9fc;border-radius:12px;padding:12px 6px}
+  .result .grid .n{font-size:20px;font-weight:700;color:var(--brand)}
+  .result .grid .l{font-size:12px;color:var(--ink-soft);margin-top:2px}
+  .review{text-align:left;max-height:260px;overflow-y:auto;border-top:1px solid var(--line);padding-top:12px;margin-top:6px}
+  .review h3{font-size:14px;margin-bottom:10px}
+  .review .item{font-size:13px;line-height:1.6;color:var(--ink-soft);
+    padding:8px 10px;border-radius:8px;margin-bottom:6px;background:#fafbfd}
+  .review .item .q{color:var(--ink);font-weight:500}
+  .review .item .tag-w{color:var(--bad);font-weight:600}
+  .review .item .tag-b{color:var(--gold);font-weight:600}
+
+  @keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @media (max-width:480px){
+    .card{padding:24px 18px}
+    .hero h1{font-size:21px}
+    .qcard .stem{font-size:18px}
+    .answer-row{flex-direction:column}
+    .options{flex-direction:column}
+    .stat-grid{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="app"></div>
+
+<script>
+/* ============================================================
+   ★ 云端配置（已自动接好 MantleDB 免注册存储）★
+   无需任何注册。学生作答自动上传到云端，老师输手机号查看。
+   老师访问密码：修改 TEACHER_PASS 即可更换后台密码（默认 123456）
+   ============================================================ */
+const CLOUD_CONFIG = {
+  base: "https://mantledb.sh",   // MantleDB API 地址
+  ns: "znzjs-k3m8x2q7",          // 云端存储空间
+  key: "3e8261a6aa2f810bcd69bc70f69d5a430edab4b78d83c9ece5ddac2ca5d9f38d" // 存储密钥
+};
+const TEACHER_PASS = "123456";  // ← 老师后台访问密码（可自行修改）
+
+/* ===== 题库 ===== */
+const QUESTIONS = [
+  {q:"物质是世界上万事万物的总和。",a:false,ex:"物质是不依赖于人的客观实在，它概括万事万物的共同本质，不是简单相加。",
+   blank:{text:"物质是万事万物的___。",opts:["共同本质","简单总和","具体形态"],ans:0}},
+  {q:"物质的唯一特性是运动。",a:false,ex:"物质的唯一特性是客观实在性；运动是物质的根本属性和存在方式。",
+   blank:{text:"物质的唯一特性是___。",opts:["客观实在性","运动","可知性"],ans:0}},
+  {q:"辩证唯物主义的物质概念概括了宇宙间客观存在着的一切事物和现象的共同本质。",a:true,ex:"表述正确。",blank:null},
+  {q:"世界上的事物千差万别，不可能有共同的属性。",a:false,ex:"事物千差万别，但都具有客观实在性这一共同本质。",
+   blank:{text:"世界上的事物千差万别，___共同的属性。",opts:["有","没有","不可能有"],ans:0}},
+  {q:"物质就是我们能看得见、摸得着的东西。",a:false,ex:"看得见摸得着的只是具体物质形态；物质是不依赖于人的意识、并能为人的意识所反映的客观实在。",
+   blank:{text:"物质是不依赖于人的___，并能为人的意识所反映的客观实在。",opts:["意识","客观实在","运动"],ans:0}},
+  {q:"物质和具体的物质形态是整体与部分的关系。",a:false,ex:"二者是共性与个性（一般与个别）的关系，不是整体与部分。",
+   blank:{text:"物质和具体的物质形态是___的关系。",opts:["共性与个性","整体与部分","多数与少数"],ans:0}},
+  {q:"自然界是客观的，人类社会是主观的。",a:false,ex:"人类社会在本质上也是客观的物质体系。",
+   blank:{text:"人类社会在本质上也是___的。",opts:["客观","主观","意识"],ans:0}},
+  {q:"艺术创作是按照创作者的意图去改造创作对象的观念性活动。",a:false,ex:"艺术创作是实践活动，是改造客观世界的物质性活动。",
+   blank:{text:"艺术创作属于___活动。",opts:["实践","纯观念","思维"],ans:0}},
+  {q:"意识内容的变化本质上是人的反映方式的变化。",a:false,ex:"意识内容的变化本质上是客观存在的变化，物质决定意识。",
+   blank:{text:"意识内容的变化本质上是___的变化。",opts:["客观存在","反映方式","人脑结构"],ans:0}},
+  {q:"意识是对客观存在的如实反映。",a:false,ex:"意识是对客观存在的能动反映，有正确与错误之分。",
+   blank:{text:"意识是对客观存在的___反映。",opts:["能动","如实","被动"],ans:0}},
+  {q:"正确发挥主观能动性才能改变事物发展的趋势。",a:false,ex:"事物发展的趋势是客观的，不能被改变，人只能认识和利用规律。",
+   blank:{text:"事物发展的趋势是___的，不能被改变。",opts:["客观","主观","可随意调整"],ans:0}},
+  {q:"意识指导人们改造世界，促进客观事物发展。",a:false,ex:"意识有正误之分，只有正确的意识才能促进事物发展。",
+   blank:{text:"只有___的意识才能促进客观事物发展。",opts:["正确","所有","错误"],ans:0}},
+  {q:"正确发挥主观能动性，实现客观与主观的统一。",a:false,ex:"应实现主观与客观的统一，即主观符合客观。",
+   blank:{text:"要实现___的统一。",opts:["主观与客观","客观与主观","理论与书本"],ans:0}},
+  {q:"意识可以创造出世界上原来没有的东西。",a:false,ex:"意识本身不能直接创造，它必须通过实践能动地指导人们去创造。",
+   blank:{text:"意识可以能动地___人们创造出世界上原来没有的东西。",opts:["指导","代替","命令"],ans:0}},
+  {q:"意识是大脑所特有的机能，大脑是产生意识的生理基础。",a:false,ex:"意识是人脑所特有的机能，人脑才是意识活动的物质器官。",
+   blank:{text:"意识是___所特有的机能。",opts:["人脑","大脑","动物脑"],ans:0}},
+  {q:"有了人脑就一定会产生意识。",a:false,ex:"人脑只是生理基础，意识还须通过实践、与客观世界接触才能产生。",
+   blank:{text:"有了人脑就___会产生意识。",opts:["不一定","一定","必然"],ans:0}},
+  {q:"先有设计图纸，然后才根据图纸制造，说明先有意识，后有物质。",a:false,ex:"设计图纸本身也来源于客观实践，说明的仍是先有物质、后有意识。",
+   blank:{text:"设计图纸本身也来源于实践，说明先有___，后有意识。",opts:["物质","图纸","理论"],ans:0}},
+  {q:"意识的形式和内容都是主观的。",a:false,ex:"意识的内容是客观的（来自客观存在），形式是主观的。",
+   blank:{text:"意识的内容是___的，形式是主观的。",opts:["客观","主观","自由"],ans:0}},
+  {q:"意识是人脑对客观存在的正确反映。",a:false,ex:"只有正确的意识才是人脑对客观存在的正确反映。",
+   blank:{text:"___的意识才是人脑对客观存在的正确反映。",opts:["正确","错误","所有"],ans:0}},
+  {q:"依据客观实际的重大判断对事物的发展起促进作用。",a:false,ex:"依据客观实际的判断也有正误之分，只有正确的重大判断才起促进作用。",
+   blank:{text:"只有___的重大判断才对事物发展起促进作用。",opts:["正确","所有","符合书本"],ans:0}},
+  {q:"人们应该改变规律适应变化的情况。",a:false,ex:"规律具有客观性，人不能改变、创造或消灭规律。",
+   blank:{text:"规律具有客观性，本身___被改变。",opts:["不可以","可以","能够"],ans:0}},
+  {q:"按规律办事就一定能取得成功。",a:false,ex:"按规律办事是成功的必要条件而非充分条件。",
+   blank:{text:"按规律办事是成功的___条件。",opts:["必要而不充分","充分","唯一"],ans:0}},
+  {q:"物质是运动的根本属性和存在方式。",a:false,ex:"运动是物质的根本属性和存在方式；物质是运动的承担者。",
+   blank:{text:"___是物质的根本属性和存在方式。",opts:["运动","物质","规律"],ans:0}},
+  {q:"物质运动是杂乱无章，无规律可循。",a:false,ex:"物质运动是有规律的，规律具有普遍性和客观性。",
+   blank:{text:"物质运动是___规律可循的。",opts:["有","没有","偶尔"],ans:0}},
+  {q:"规律是事物之间的一种联系，因此，联系就是规律。",a:false,ex:"规律是事物运动过程中固有的本质的、必然的、稳定的联系；联系不一定是规律。",
+   blank:{text:"规律是事物运动过程中___的本质的、必然的、稳定的联系。",opts:["固有","主观","偶然"],ans:0}},
+  {q:"规律有好坏之分，是永恒不变的、无条件的。",a:false,ex:"规律是客观的，没有好坏之分；规律随条件变化而变化，其作用是有条件的。",
+   blank:{text:"规律___好坏之分，其存在和发生作用是有条件的。",opts:["没有","有","时有时无"],ans:0}},
+  {q:"正确的规律可以造福人类，错误的规律会给人类带来危害。",a:false,ex:"规律本身无对错；尊重规律、发挥主观能动性可造福人类，违背规律则受惩罚。",
+   blank:{text:"在___规律的基础上发挥主观能动性，可以造福人类。",opts:["尊重","改变","创造"],ans:0}},
+  {q:"人只能反映事物的现象，不能把握事物的本质和规律。",a:false,ex:"人能够能动地认识世界，不仅能反映现象，还能把握本质和规律。",
+   blank:{text:"人不仅能反映事物的现象，___把握事物的本质和规律。",opts:["而且能","不能","只能偶尔"],ans:0}},
+  {q:"人的意识能够直接作用于客观世界，使客观世界发生变化。",a:false,ex:"意识不能直接作用于客观世界，必须通过实践改造客观事物。",
+   blank:{text:"人的意识必须___才能作用于客观事物。",opts:["通过实践","直接","自动"],ans:0}},
+  {q:"只要充分发挥主观能动性，想问题、办事情就能取得成功。",a:false,ex:"必须在尊重客观规律的基础上发挥主观能动性，才能成功。",
+   blank:{text:"必须在___的基础上发挥主观能动性，才能取得成功。",opts:["尊重客观规律","加大主观努力","多读书"],ans:0}},
+  {q:"世界上只有尚未认识之物，没有不可认识之物。",a:true,ex:"表述正确，体现了可知论。",blank:null},
+  {q:"发挥意识的能动作用是无条件的。",a:false,ex:"发挥意识的能动作用必须以尊重客观规律、从实际出发为前提。",
+   blank:{text:"发挥意识的能动作用是___的。",opts:["有条件","无条件","任意"],ans:0}},
+  {q:"正确发挥主观能动性是尊重客观规律的前提条件。",a:false,ex:"颠倒了关系：尊重客观规律才是正确发挥主观能动性的前提。",
+   blank:{text:"___是正确发挥主观能动性的前提条件。",opts:["尊重客观规律","发挥主观能动性","解放思想"],ans:0}},
+  {q:"一切从实际出发，实事求是，要求我们尊重客观规律，同时要正确发挥主观能动性。",a:true,ex:"表述正确。",blank:null}
+];
+
+/* ===== 状态 ===== */
+const state = {
+  mode: "start",   // start | student | play | done | teacher | dash
+  studentName: "",
+  idx:0, score:0, combo:0,
+  wrongJudge:[], wrongBlank:[],
+  judgeDone:false, judgeRight:false,
+  blankDone:false, blankRight:false,
+  pickedIdx:-1
+};
+
+const app = document.getElementById("app");
+
+function parseAnswer(raw){
+  const s=(raw||"").trim().toLowerCase();
+  if(!s) return null;
+  const yes=["对","正确","√","✓","是","t","true","y","yes","right","correct"];
+  const no=["错","错误","×","✗","x","否","f","false","n","no","wrong","incorrect","不正确"];
+  if(yes.includes(s)) return true;
+  if(no.includes(s)) return false;
+  if(s.includes("正确")&&!s.includes("不")) return true;
+  if(s.includes("错")||s.includes("误")||s.includes("×")) return false;
+  if(s.includes("对")&&!s.includes("不")) return true;
+  return null;
+}
+
+function render(){
+  if(state.mode==="start") return renderStart();
+  if(state.mode==="student") return renderName();
+  if(state.mode==="teacher") return renderTeacherLogin();
+  if(state.mode==="dash") return renderDashboard();
+  if(state.idx>=QUESTIONS.length) return renderDone();
+  renderPlay();
+}
+
+/* ===== 云端：MantleDB 免注册存储 ===== */
+function cloudReady(){
+  return !!(CLOUD_CONFIG.base && CLOUD_CONFIG.ns && CLOUD_CONFIG.key);
+}
+
+// 学生：自动上传成绩（每人写入独立路径，互不覆盖）
+async function uploadResult(rec){
+  if(!cloudReady()){
+    return {ok:false, msg:"云端未配置，成绩仅保存在本机"};
+  }
+  const ts = Date.now();
+  const rand = Math.random().toString(36).slice(2,8);
+  const path = `r/${ts}-${rand}`;
+  const res = await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/${path}`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-Mantle-Key":CLOUD_CONFIG.key},
+    body: JSON.stringify(rec)
+  });
+  if(!res.ok) throw new Error("上传失败");
+  return {ok:true, msg:"成绩已自动提交给老师"};
+}
+
+// 老师：读取全部成绩
+async function fetchResults(){
+  if(!cloudReady()){
+    return {ok:false, msg:"云端未配置"};
+  }
+  const listRes = await fetch(`${CLOUD_CONFIG.base}/v2/list/${CLOUD_CONFIG.ns}`, {
+    headers:{"X-Mantle-Key":CLOUD_CONFIG.key}
+  });
+  if(!listRes.ok) throw new Error("读取成绩列表失败");
+  const list = await listRes.json();
+  const paths = (list.entries||[]).map(e=>e.path);
+  const rows = [];
+  for(const p of paths){
+    const r = await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/${p}`, {
+      headers:{"X-Mantle-Key":CLOUD_CONFIG.key}
+    });
+    if(!r.ok) continue;
+    const a = await r.json();
+    const right = a.right||0, total = a.total||0;
+    rows.push({
+      name: a.name||"匿名",
+      score: a.score||0,
+      right: right,
+      total: total,
+      rate: Math.round(right/total*100),
+      wrongNums: a.wrongNums||"",
+      time: a.time||""
+    });
+  }
+  rows.sort((x,y)=>y.score-x.score);
+  return {ok:true, rows};
+}
+
+/* ===== 开始页 ===== */
+function renderStart(){
+  app.innerHTML = `
+    <div class="card hero">
+      <div class="badge">高中政治 · 生活与哲学</div>
+      <h1>探究世界的本质<br><span style="font-size:15px;color:var(--brand);font-weight:700;letter-spacing:1px">第二课 · 判断 + 选词闯关</span></h1>
+      <div class="sub">先判断对错，再从三个词语中选出正确的把句子改对</div>
+      <div class="stats">
+        <div class="item"><div class="num">${QUESTIONS.length}</div><div class="lbl">关卡</div></div>
+        <div class="item"><div class="num">1分</div><div class="lbl">每题</div></div>
+        <div class="item"><div class="num">${QUESTIONS.length}分</div><div class="lbl">满分</div></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="goStudent()">我是学生，开始答题</button>
+        <button class="btn ghost" onclick="goTeacher()">我是老师，查看成绩</button>
+      </div>
+    </div>`;
+}
+
+/* ===== 学生姓名页 ===== */
+function renderName(){
+  app.innerHTML = `
+    <div class="card hero">
+      <div class="badge">学生答题</div>
+      <h1>请输入你的姓名</h1>
+      <div class="sub">答完会自动提交，老师直接就能看到</div>
+      <input class="name-input" id="nameInput" type="text" placeholder="输入姓名，如：张三" autocomplete="off">
+      <div class="btn-row">
+        <button class="btn" onclick="confirmName()">开始闯关</button>
+        <button class="btn ghost" onclick="state.mode='start';render()">返回</button>
+      </div>
+    </div>`;
+  const ni=document.getElementById("nameInput");
+  ni.focus();
+  ni.addEventListener("keydown",e=>{if(e.key==="Enter") confirmName();});
+}
+
+window.goStudent = function(){ state.mode="student"; render(); };
+window.goTeacher = function(){ state.mode="teacher"; render(); };
+
+window.confirmName = function(){
+  const ni=document.getElementById("nameInput");
+  const name=ni.value.trim();
+  if(!name){ ni.focus(); ni.placeholder="请先输入姓名"; return; }
+  state.studentName=name;
+  state.idx=0; state.score=0; state.combo=0;
+  state.wrongJudge=[]; state.wrongBlank=[];
+  resetQuestion();
+  state.mode="play";
+  render();
+};
+
+/* ===== 游戏页 ===== */
+function renderPlay(){
+  const q = QUESTIONS[state.idx];
+  const total = QUESTIONS.length;
+  const pct = (state.idx/total)*100;
+  const judged = state.judgeDone;
+  const showNext = judged && (!q.blank || state.blankDone);
+
+  let fbClass="", fbHTML="";
+  if(judged){
+    fbClass = state.judgeRight ? "good" : "bad";
+    fbHTML = `
+      <div class="verdict"><span class="dot">${state.judgeRight?"✓":"✕"}</span>
+        ${state.judgeRight?"判断正确！":"判断错误，正确答案是："+(q.a?"对":"错")}</div>
+      <div class="ans-line">${q.ex}</div>`;
+  }
+
+  let blankHTML = "";
+  if(judged && q.blank){
+    const b = q.blank;
+    const sentenceHTML = b.text.replace("___",
+      state.blankDone
+        ? `<span class="blank ${state.blankRight?"picked":""}">${b.opts[b.ans]}</span>`
+        : `<span class="blank">？？？</span>`);
+    let optsHTML = b.opts.map((o,i)=>{
+      let cls="option-btn";
+      if(state.blankDone){
+        if(i===b.ans) cls+=" right";
+        else if(i===state.pickedIdx) cls+=" wrong";
+      }
+      return `<button class="${cls}" ${state.blankDone?"disabled":""} onclick="pickBlank(${i})">${o}</button>`;
+    }).join("");
+    blankHTML = `
+      <div class="blank-box show">
+        <div class="label">选出正确的词语</div>
+        <div class="blank-sentence">${sentenceHTML}</div>
+        <div class="options">${optsHTML}</div>
+      </div>`;
+  }
+
+  app.innerHTML = `
+    <div class="topbar">
+      <div class="lv">${state.studentName} · 第 ${state.idx+1} 关 / 共 ${total} 关</div>
+      <div class="score">得分 <b>${state.score}</b></div>
+    </div>
+    <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+    <div class="card qcard">
+      <div class="tag">判断题</div>
+      <div class="stem">${q.q}</div>
+      <div class="answer-row">
+        <input id="ans" type="text" placeholder="输入：对 / 错" autocomplete="off" ${judged?"disabled":""}>
+        ${judged?"":'<button class="btn" onclick="submitJudge()">提交</button>'}
+      </div>
+      <div class="feedback ${judged?"show "+fbClass:""}">${fbHTML}</div>
+      ${blankHTML}
+      <div class="next-row ${showNext?"show":""}">
+        <button class="btn" onclick="nextQ()">${state.idx+1>=QUESTIONS.length?"查看成绩":"下一关 →"}</button>
+      </div>
+    </div>`;
+  if(!judged){
+    const inp=document.getElementById("ans");
+    inp.focus();
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter") submitJudge();});
+  } else {
+    setTimeout(()=>{
+      const nr=document.querySelector(".next-row.show");
+      if(nr) nr.scrollIntoView({behavior:"smooth",block:"center"});
+    },80);
+  }
+}
+
+function resetQuestion(){
+  state.judgeDone=false; state.judgeRight=false;
+  state.blankDone=false; state.blankRight=false; state.pickedIdx=-1;
+}
+
+window.submitJudge = function(){
+  const inp=document.getElementById("ans");
+  const ans=parseAnswer(inp.value);
+  if(ans===null){
+    inp.style.borderColor="var(--bad)";
+    inp.placeholder="请输入「对」或「错」";
+    inp.select(); return;
+  }
+  const q=QUESTIONS[state.idx];
+  state.judgeRight=(ans===q.a);
+  state.judgeDone=true;
+  if(state.judgeRight){
+    state.score+=1;
+  } else {
+    state.wrongJudge.push({num:state.idx+1, q:q.q, right:q.a?"对":"错", your:inp.value.trim()});
+  }
+  renderPlay();
+};
+
+window.pickBlank = function(i){
+  const q=QUESTIONS[state.idx];
+  if(!q.blank || state.blankDone) return;
+  state.pickedIdx=i;
+  state.blankRight=(i===q.blank.ans);
+  state.blankDone=true;
+  if(!state.blankRight){
+    state.wrongBlank.push({num:state.idx+1, q:q.blank.text, right:q.blank.opts[q.blank.ans], your:q.blank.opts[i]});
+  }
+  renderPlay();
+};
+
+window.nextQ = function(){
+  state.idx++;
+  resetQuestion();
+  render();
+};
+
+/* ===== 学生结算页 ===== */
+function renderDone(){
+  const total=QUESTIONS.length;
+  const wj=state.wrongJudge.length;
+  const rightJudge=total-wj;
+  const rate=Math.round(rightJudge/total*100);
+  let stars=1;
+  if(rate>=90) stars=3; else if(rate>=70) stars=2;
+  let title,desc;
+  if(stars===3){title="完美通关！";desc="判断和改写都非常扎实。";}
+  else if(stars===2){title="表现不错！";desc="再看看错题，争取满分。";}
+  else{title="闯关完成";desc="建议把错题再过一遍，重新挑战。";}
+  let starsHTML="";
+  for(let i=1;i<=3;i++) starsHTML+=`<span class="${i<=stars?"on":""}">★</span>`;
+
+  let review="";
+  if(wj||state.wrongBlank.length){
+    review=`<div class="review"><h3>错题回顾</h3>`;
+    state.wrongJudge.forEach(w=>{
+      review+=`<div class="item"><div class="q">${w.num}. ${w.q}</div>
+        <div>你的判断：<span class="tag-w">${w.your||"?"}</span> ｜ 正确：<b>${w.right}</b></div></div>`;
+    });
+    state.wrongBlank.forEach(w=>{
+      review+=`<div class="item"><div class="q">${w.num}. 选词：${w.q}</div>
+        <div>你选了 <span class="tag-b">${w.your}</span> ｜ 正确答案：<b>${w.right}</b></div></div>`;
+    });
+    review+=`</div>`;
+  } else {
+    review=`<div class="review"><div style="text-align:center;color:var(--good);font-weight:600;padding:10px">全部答对，一道错题都没有！</div></div>`;
+  }
+
+  const wrongNums=state.wrongJudge.map(w=>w.num).join(",");
+  const rec={name:state.studentName,score:state.score,right:rightJudge,total:total,rate:rate,wrongNums:wrongNums};
+  let uploadBox=`<div class="upload-box" id="uploadBox">正在自动提交成绩…</div>`;
+
+  app.innerHTML=`
+    <div class="card result">
+      <div class="trophy">🏁</div>
+      <h2>${title}</h2>
+      <div class="desc">${desc}</div>
+      <div class="stars">${starsHTML}</div>
+      <div class="grid">
+        <div class="box"><div class="n">${state.score}</div><div class="l">总分</div></div>
+        <div class="box"><div class="n">${rightJudge}/${total}</div><div class="l">判断正确</div></div>
+        <div class="box"><div class="n">${rate}%</div><div class="l">正确率</div></div>
+      </div>
+      ${uploadBox}
+      ${review}
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn" onclick="restartStudent()">再闯一次</button>
+        <button class="btn ghost" onclick="state.mode='start';render()">返回首页</button>
+      </div>
+    </div>`;
+
+  // 自动上传成绩到云端
+  uploadResult(rec).then(res=>{
+    const box=document.getElementById("uploadBox");
+    if(!box) return;
+    if(res.ok){
+      box.innerHTML=`<div class="ok">✓ ${res.msg}</div>`;
+    }else{
+      box.innerHTML=`<div class="err">✕ ${res.msg}</div>`;
+    }
+  }).catch(err=>{
+    const box=document.getElementById("uploadBox");
+    if(box) box.innerHTML=`<div class="err">✕ 上传失败（网络异常），请检查网络后重试</div>`;
+  });
+}
+
+window.restartStudent = function(){
+  state.idx=0; state.score=0; state.combo=0;
+  state.wrongJudge=[]; state.wrongBlank=[];
+  resetQuestion();
+  state.mode="play";
+  render();
+};
+
+/* ===== 老师端：手机号登录 ===== */
+function renderTeacherLogin(){
+  app.innerHTML = `
+    <div class="card teacher-area">
+      <div class="badge" style="display:inline-block;background:rgba(250,173,20,.15);color:var(--gold);font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:14px">老师后台 · 密码版</div>
+      <h2 style="margin-bottom:6px">查看全班成绩</h2>
+      <div style="font-size:12px;color:var(--brand);margin-bottom:8px">访问密码：123456</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:16px">请输入老师访问密码，验证通过后可查看自动汇总的全部成绩。</div>
+      <input id="phoneInput" type="password" style="width:100%;font-family:inherit;font-size:18px;padding:14px 16px;border:2px solid var(--line);border-radius:12px;outline:none;text-align:center;margin-bottom:16px" placeholder="请输入老师访问密码" autocomplete="off">
+      <div class="btn-row" style="margin-top:4px">
+        <button class="btn" onclick="verifyTeacher()">验证并查看成绩</button>
+        <button class="btn ghost" onclick="state.mode='start';render()">返回首页</button>
+      </div>
+      <div id="teacherMsg" style="margin-top:16px;font-size:14px;color:var(--bad);text-align:center"></div>
+    </div>`;
+  const pi=document.getElementById("phoneInput");
+  pi.focus();
+  pi.addEventListener("keydown",e=>{if(e.key==="Enter") verifyTeacher();});
+}
+
+window.verifyTeacher = function(){
+  const pi=document.getElementById("phoneInput");
+  const pwd=pi.value.trim();
+  const msg=document.getElementById("teacherMsg");
+  if(!pwd){ msg.textContent="请输入访问密码"; return; }
+  if(pwd===TEACHER_PASS){
+    state.mode="dash";
+    render();
+  }else{
+    msg.textContent="密码错误，无查看权限";
+  }
+};
+
+/* ===== 老师端：成绩汇总面板 ===== */
+async function renderDashboard(){
+  app.innerHTML = `
+    <div class="card teacher-area">
+      <div class="badge" style="display:inline-block;background:rgba(250,173,20,.15);color:var(--gold);font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:14px">老师后台</div>
+      <h2 style="margin-bottom:6px">学生成绩自动汇总</h2>
+      <div style="font-size:13px;color:var(--ink-soft);margin-bottom:16px">正在从云端读取成绩，请稍候…</div>
+      <div class="btn-row" style="margin-bottom:14px">
+        <button class="btn small" onclick="loadDashboard()">刷新成绩</button>
+        <button class="btn ghost small" onclick="exportCSV()">导出 Excel</button>
+        <button class="btn ghost small" onclick="state.mode='start';render()">返回首页</button>
+      </div>
+      <div id="dashArea"><div style="text-align:center;color:var(--ink-soft);padding:30px">加载中…</div></div>
+    </div>`;
+  await loadDashboard();
+}
+
+async function loadDashboard(){
+  const area=document.getElementById("dashArea");
+  if(!area) return;
+  area.innerHTML=`<div style="text-align:center;color:var(--ink-soft);padding:30px">加载中…</div>`;
+  try{
+    const res=await fetchResults();
+    if(!res.ok){
+      area.innerHTML=`<div style="color:var(--bad);padding:20px;text-align:center;font-size:14px">${res.msg}<br><br>
+        配置方法：打开本 HTML，在顶部 CLOUD_CONFIG 里填写 LeanCloud 的 appId / appKey / serverURL。</div>`;
+      return;
+    }
+    const rows=res.rows;
+    if(!rows.length){
+      area.innerHTML=`<div style="color:var(--ink-soft);padding:20px;text-align:center;font-size:14px">暂无成绩。学生答题提交后会自动出现在这里。</div>`;
+      return;
+    }
+    // 汇总统计
+    const n=rows.length;
+    const avgScore=Math.round(rows.reduce((s,r)=>s+r.score,0)/n);
+    const maxScore=Math.max(...rows.map(r=>r.score));
+    const avgRate=Math.round(rows.reduce((s,r)=>s+r.rate,0)/n);
+    window.__rows=rows;
+    let html=`
+      <div class="stat-grid">
+        <div class="box"><div class="n">${n}</div><div class="l">已提交</div></div>
+        <div class="box"><div class="n">${maxScore}</div><div class="l">最高分</div></div>
+        <div class="box"><div class="n">${avgScore}</div><div class="l">平均分</div></div>
+      </div>
+      <table>
+        <colgroup><col style="width:12%"><col style="width:15%"><col style="width:15%"><col style="width:20%"><col style="width:14%"><col style="width:24%"></colgroup>
+        <thead><tr><th>名次</th><th>姓名</th><th>总分</th><th>判断正确</th><th>正确率</th><th>错题号</th></tr></thead><tbody>`;
+    rows.forEach((s,i)=>{
+      const rateCls=s.rate>=90?"good":(s.rate<60?"bad":"");
+      html+=`<tr>
+        <td class="${i===0?"rank-1":""}">${i+1}</td>
+        <td><b>${s.name}</b></td>
+        <td><b>${s.score}</b></td>
+        <td>${s.right}/${s.total}</td>
+        <td class="${rateCls}">${s.rate}%</td>
+        <td style="font-size:12px">${s.wrongNums||"全对"}</td>
+      </tr>`;
+    });
+    html+=`</tbody></table>`;
+    html+=`<div style="margin-top:12px;font-size:13px;color:var(--ink-soft);text-align:center">共 ${n} 人已自动提交 · 平均正确率 ${avgRate}%</div>`;
+    area.innerHTML=html;
+  }catch(err){
+    area.innerHTML=`<div style="color:var(--bad);padding:20px;text-align:center;font-size:14px">读取失败：${err&&err.message||"网络异常"}，请检查网络后重试。</div>`;
+  }
+}
+
+window.exportCSV = function(){
+  const rows=window.__rows||[];
+  if(!rows.length){ alert("暂无成绩可导出"); return; }
+  const lines=["名次,姓名,总分,判断正确,正确率,错题号"];
+  rows.forEach((s,i)=>{ lines.push(`${i+1},${s.name},${s.score},${s.right}/${s.total},${s.rate}%,${s.wrongNums||"全对"}`); });
+  const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="学生成绩汇总.csv";
+  a.click();
+};
+
+/* 初始 */
+renderStart();
+</script>
+</body>
+</html>
+<!-- （注：内容由AI生成，含LeanCloud云端自动汇总改造） -->
