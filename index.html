@@ -152,7 +152,7 @@
 /* ============================================================
    ★ 云端配置（已自动接好 MantleDB 免注册存储）★
    无需任何注册。学生作答自动上传到云端，老师输手机号查看。
-   老师访问密码：修改 TEACHER_PASS 即可更换后台密码（默认 123456）
+   老师访问密码：修改 TEACHER_PASS 即可更换后台密码
    ============================================================ */
 const CLOUD_CONFIG = {
   base: "https://mantledb.sh",   // MantleDB API 地址
@@ -196,10 +196,23 @@ const QUESTIONS = [
    blank:{text:"“仁者见仁，智者见智”是说对同一事物会产生多个不同的___。",opts:["认识","真理","答案"],ans:0}}
 ];
 
+/* ===== 随机化选词选项顺序（每题正确答案位置不固定） ===== */
+QUESTIONS.forEach(q=>{
+  if(q.blank){
+    const order=[0,1,2];
+    for(let i=order.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [order[i],order[j]]=[order[j],order[i]];
+    }
+    q._order=order;
+  }
+});
+
 /* ===== 状态 ===== */
 const state = {
   mode: "start",   // start | student | play | done | teacher | dash
   studentName: "",
+  studentClass: "",
   idx:0, score:0, combo:0,
   wrongJudge:[], wrongBlank:[],
   judgeDone:false, judgeRight:false,
@@ -274,6 +287,7 @@ async function fetchResults(){
     const right = a.right||0, total = a.total||0;
     rows.push({
       name: a.name||"匿名",
+      cls: a.cls||"",
       score: a.score||0,
       right: right,
       total: total,
@@ -310,9 +324,10 @@ function renderName(){
   app.innerHTML = `
     <div class="card hero">
       <div class="badge">学生答题</div>
-      <h1>请输入你的姓名</h1>
+      <h1>请输入班级和姓名</h1>
       <div class="sub">答完会自动提交，老师直接就能看到</div>
-      <input class="name-input" id="nameInput" type="text" placeholder="输入姓名，如：张三" autocomplete="off">
+      <input class="name-input" id="classInput" type="text" placeholder="班级（选填），如：高二（3）班" autocomplete="off">
+      <input class="name-input" id="nameInput" type="text" placeholder="输入姓名，如：张三" autocomplete="off" style="margin-bottom:18px">
       <div class="btn-row">
         <button class="btn" onclick="confirmName()">开始闯关</button>
         <button class="btn ghost" onclick="state.mode='start';render()">返回</button>
@@ -330,6 +345,8 @@ window.confirmName = function(){
   const ni=document.getElementById("nameInput");
   const name=ni.value.trim();
   if(!name){ ni.focus(); ni.placeholder="请先输入姓名"; return; }
+  const ci=document.getElementById("classInput");
+  state.studentClass=ci?ci.value.trim():"";
   state.studentName=name;
   state.idx=0; state.score=0; state.combo=0;
   state.wrongJudge=[]; state.wrongBlank=[];
@@ -362,13 +379,15 @@ function renderPlay(){
       state.blankDone
         ? `<span class="blank ${state.blankRight?"picked":""}">${b.opts[b.ans]}</span>`
         : `<span class="blank">？？？</span>`);
-    let optsHTML = b.opts.map((o,i)=>{
+    const order = b._order||[0,1,2];
+    let optsHTML = order.map((oi)=>{
+      const o=b.opts[oi];
       let cls="option-btn";
       if(state.blankDone){
-        if(i===b.ans) cls+=" right";
-        else if(i===state.pickedIdx) cls+=" wrong";
+        if(oi===b.ans) cls+=" right";
+        else if(oi===state.pickedIdx) cls+=" wrong";
       }
-      return `<button class="${cls}" ${state.blankDone?"disabled":""} onclick="pickBlank(${i})">${o}</button>`;
+      return `<button class="${cls}" ${state.blankDone?"disabled":""} onclick="pickBlank(${oi})">${o}</button>`;
     }).join("");
     blankHTML = `
       <div class="blank-box show">
@@ -380,7 +399,7 @@ function renderPlay(){
 
   app.innerHTML = `
     <div class="topbar">
-      <div class="lv">${state.studentName} · 第 ${state.idx+1} 关 / 共 ${total} 关</div>
+      <div class="lv">${state.studentClass?state.studentClass+" · ":""}${state.studentName} · 第 ${state.idx+1} 关 / 共 ${total} 关</div>
       <div class="score">得分 <b>${state.score}</b></div>
     </div>
     <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
@@ -483,7 +502,7 @@ function renderDone(){
   }
 
   const wrongNums=state.wrongJudge.map(w=>w.num).join(",");
-  const rec={name:state.studentName,score:state.score,right:rightJudge,total:total,rate:rate,wrongNums:wrongNums};
+  const rec={name:state.studentName,cls:state.studentClass,score:state.score,right:rightJudge,total:total,rate:rate,wrongNums:wrongNums};
   let uploadBox=`<div class="upload-box" id="uploadBox">正在自动提交成绩…</div>`;
 
   app.innerHTML=`
@@ -534,7 +553,6 @@ function renderTeacherLogin(){
     <div class="card teacher-area">
       <div class="badge" style="display:inline-block;background:rgba(250,173,20,.15);color:var(--gold);font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;margin-bottom:14px">老师后台 · 密码版</div>
       <h2 style="margin-bottom:6px">查看全班成绩</h2>
-      <div style="font-size:12px;color:var(--brand);margin-bottom:8px">访问密码：123456</div>
       <div style="font-size:13px;color:var(--ink-soft);margin-bottom:16px">请输入老师访问密码，验证通过后可查看自动汇总的全部成绩。</div>
       <input id="phoneInput" type="password" style="width:100%;font-family:inherit;font-size:18px;padding:14px 16px;border:2px solid var(--line);border-radius:12px;outline:none;text-align:center;margin-bottom:16px" placeholder="请输入老师访问密码" autocomplete="off">
       <div class="btn-row" style="margin-top:4px">
@@ -607,12 +625,13 @@ async function loadDashboard(){
         <div class="box"><div class="n">${avgScore}</div><div class="l">平均分</div></div>
       </div>
       <table>
-        <colgroup><col style="width:12%"><col style="width:15%"><col style="width:15%"><col style="width:20%"><col style="width:14%"><col style="width:24%"></colgroup>
-        <thead><tr><th>名次</th><th>姓名</th><th>总分</th><th>判断正确</th><th>正确率</th><th>错题号</th></tr></thead><tbody>`;
+        <colgroup><col style="width:8%"><col style="width:11%"><col style="width:11%"><col style="width:8%"><col style="width:17%"><col style="width:11%"><col style="width:34%"></colgroup>
+        <thead><tr><th>名次</th><th>班级</th><th>姓名</th><th>总分</th><th>判断正确</th><th>正确率</th><th>错题号</th></tr></thead><tbody>`;
     rows.forEach((s,i)=>{
       const rateCls=s.rate>=90?"good":(s.rate<60?"bad":"");
       html+=`<tr>
         <td class="${i===0?"rank-1":""}">${i+1}</td>
+        <td>${s.cls||"-"}</td>
         <td><b>${s.name}</b></td>
         <td><b>${s.score}</b></td>
         <td>${s.right}/${s.total}</td>
@@ -631,8 +650,8 @@ async function loadDashboard(){
 window.exportCSV = function(){
   const rows=window.__rows||[];
   if(!rows.length){ alert("暂无成绩可导出"); return; }
-  const lines=["名次,姓名,总分,判断正确,正确率,错题号"];
-  rows.forEach((s,i)=>{ lines.push(`${i+1},${s.name},${s.score},${s.right}/${s.total},${s.rate}%,${s.wrongNums||"全对"}`); });
+  const lines=["名次,班级,姓名,总分,判断正确,正确率,错题号"];
+  rows.forEach((s,i)=>{ lines.push(`${i+1},${s.cls||"-"},${s.name},${s.score},${s.right}/${s.total},${s.rate}%,${s.wrongNums||"全对"}`); });
   const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
