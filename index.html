@@ -380,7 +380,7 @@ function renderPlay(){
       state.blankDone
         ? `<span class="blank ${state.blankRight?"picked":""}">${b.opts[b.ans]}</span>`
         : `<span class="blank">？？？</span>`);
-    const order = b._order||[0,1,2];
+    const order = q._order||[0,1,2];
     let optsHTML = order.map((oi)=>{
       const o=b.opts[oi];
       let cls="option-btn";
