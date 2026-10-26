@@ -43,6 +43,8 @@
   .btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(47,84,235,.45)}
   .btn.ghost{background:#fff;color:var(--brand);border:2px solid var(--brand);box-shadow:none}
   .btn.ghost:hover{background:#f0f5ff}
+  .btn.danger{background:linear-gradient(135deg,#f5222d,#cf1322);box-shadow:0 6px 18px rgba(245,34,45,.35)}
+  .btn.danger:hover{box-shadow:0 10px 24px rgba(245,34,45,.45)}
   .btn.small{padding:8px 18px;font-size:14px}
   .btn-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px}
 
@@ -590,6 +592,7 @@ async function renderDashboard(){
       <div class="btn-row" style="margin-bottom:14px">
         <button class="btn small" onclick="loadDashboard()">刷新成绩</button>
         <button class="btn ghost small" onclick="exportCSV()">导出 Excel</button>
+        <button class="btn danger small" onclick="askClear()">清除全部成绩</button>
         <button class="btn ghost small" onclick="state.mode='start';render()">返回首页</button>
       </div>
       <div id="dashArea"><div style="text-align:center;color:var(--ink-soft);padding:30px">加载中…</div></div>
@@ -659,6 +662,50 @@ window.exportCSV = function(){
   a.download="学生成绩汇总.csv";
   a.click();
 };
+
+/* ===== 清除全部成绩（需老师密码二次确认） ===== */
+async function deleteRecord(path){
+  const res = await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/${path}`, {
+    method:"DELETE",
+    headers:{"X-Mantle-Key":CLOUD_CONFIG.key}
+  });
+  return res.ok;
+}
+
+window.askClear = function(){
+  const pwd=prompt("⚠ 确定要清除全部学生成绩吗？\n此操作不可恢复！\n请输入老师访问密码确认：");
+  if(pwd===null) return;
+  if(pwd.trim()!==TEACHER_PASS){ alert("密码错误，已取消清除"); return; }
+  if(!confirm("最后确认：将永久删除云端全部成绩记录，确定继续？")) return;
+  clearAll();
+};
+
+async function clearAll(){
+  const area=document.getElementById("dashArea");
+  if(!area) return;
+  area.innerHTML=`<div style="text-align:center;color:var(--ink-soft);padding:30px">正在清除成绩…</div>`;
+  try{
+    const listRes=await fetch(`${CLOUD_CONFIG.base}/v2/list/${CLOUD_CONFIG.ns}`, {headers:{"X-Mantle-Key":CLOUD_CONFIG.key}});
+    if(!listRes.ok) throw new Error("读取成绩列表失败");
+    const list=await listRes.json();
+    const paths=(list.entries||[]).map(e=>e.path);
+    if(!paths.length){
+      area.innerHTML=`<div style="color:var(--good);padding:20px;text-align:center">当前没有成绩记录，无需清除。</div>`;
+      return;
+    }
+    let ok=0, fail=0;
+    for(const p of paths){
+      if(await deleteRecord(p)) ok++; else fail++;
+    }
+    window.__rows=[];
+    area.innerHTML=`<div style="padding:20px;text-align:center;font-size:14px">
+      <div style="color:var(--good);font-weight:700;font-size:18px;margin-bottom:8px">已清除 ${ok} 条成绩</div>
+      ${fail?`<div style="color:var(--bad)">${fail} 条清除失败，请刷新后重试</div>`:"<div style='color:var(--ink-soft)'>全部成绩已清空，学生可重新作答提交</div>"}
+    </div>`;
+  }catch(err){
+    area.innerHTML=`<div style="color:var(--bad);padding:20px;text-align:center">清除失败：${err&&err.message||"网络异常"}，请重试。</div>`;
+  }
+}
 
 /* 初始 */
 renderStart();
