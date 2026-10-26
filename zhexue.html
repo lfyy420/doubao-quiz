@@ -225,9 +225,13 @@ let CLOUD_ANS_LOADED = false;
 
 async function loadCloudAnswers(){
   try{
+    const ctrl=new AbortController();
+    const timer=setTimeout(()=>ctrl.abort(),3000);
     const r = await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/answers-zhexue`, {
-      headers:{"X-Mantle-Key":CLOUD_CONFIG.key}
+      headers:{"X-Mantle-Key":CLOUD_CONFIG.key},
+      signal:ctrl.signal
     });
+    clearTimeout(timer);
     if(r.ok){
       const d = await r.json();
       if(d && Array.isArray(d.answers) && d.answers.length===QUESTIONS.length){
@@ -235,7 +239,7 @@ async function loadCloudAnswers(){
         CLOUD_ANS_LOADED = true;
       }
     }
-  }catch(e){ /* 无云端答案时用默认 */ }
+  }catch(e){ /* 无云端答案或超时时用默认 */ }
 }
 
 /* ===== 状态 ===== */
@@ -703,8 +707,9 @@ async function clearAll(){
   }
 }
 
-/* 初始：先加载云端答案，再渲染 */
-loadCloudAnswers().finally(()=>renderStart());
+/* 初始：立即渲染首页，云端答案异步加载（超时自动用默认答案） */
+renderStart();
+loadCloudAnswers();
 </script>
 </body>
 </html>
