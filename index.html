@@ -279,7 +279,7 @@ async function fetchResults(){
   });
   if(!listRes.ok) throw new Error("读取成绩列表失败");
   const list = await listRes.json();
-  const paths = (list.entries||[]).map(e=>e.path);
+  const paths = (list.entries||[]).map(e=>e.path).filter(p=>!p.startsWith("zhexue/"));
   const rows = [];
   for(const p of paths){
     const r = await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/${p}`, {
