@@ -67,6 +67,7 @@
   .option-btn:hover:not(:disabled){border-color:var(--brand);color:var(--brand);background:#f0f5ff}
   .option-btn.right{background:var(--good-bg);border-color:var(--good);color:var(--good)}
   .option-btn.wrong{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .option-btn.picked{border-color:var(--brand);background:#f0f5ff;color:var(--brand)}
   .option-btn:disabled{cursor:default;opacity:.9}
 
   .feedback{margin-top:16px;border-radius:14px;padding:16px;display:none}
@@ -247,6 +248,7 @@ const state = {
   mode:"start",  // start | student | play | done | teacher | dash | answers
   studentName:"", studentClass:"",
   idx:0, score:0,
+  answers:[],   // 学生所选答案（字母），供教师端自动判分
   wrong:[], picked:-1, answered:false,
   ansDraft:[]
 };
@@ -288,12 +290,25 @@ async function fetchResults(){
     const r=await fetch(`${CLOUD_CONFIG.base}/v2/${CLOUD_CONFIG.ns}/${p}`,{headers:{"X-Mantle-Key":CLOUD_CONFIG.key}});
     if(!r.ok) continue;
     const a=await r.json();
-    const right=a.right||0, total=a.total||0;
+    const total=a.total||QUESTIONS.length;
+    // 教师端按当前答案自动判分（学生端只提交答案序列）
+    let right, wrongNums, score;
+    if(typeof a.answers==="string" && a.answers.length===QUESTIONS.length){
+      const wrong=[];
+      a.answers.split("").forEach((ans,i)=>{
+        if(LETTERS[ANSWERS[i]]!==ans) wrong.push(i+1);
+      });
+      right=QUESTIONS.length-wrong.length;
+      wrongNums=wrong.join(",");
+      score=right;
+    }else{
+      right=a.right||0; score=a.score||0; wrongNums=a.wrongNums||"";
+    }
     rows.push({
       name:a.name||"匿名", cls:a.cls||"",
-      score:a.score||0, right:right, total:total,
+      score:score, right:right, total:total,
       rate:Math.round(right/total*100),
-      wrongNums:a.wrongNums||"", time:a.time||""
+      wrongNums:wrongNums, time:a.time||""
     });
   }
   rows.sort((x,y)=>y.score-x.score);
@@ -351,13 +366,13 @@ window.confirmName = function(){
   const ci=document.getElementById("classInput");
   state.studentClass=ci?ci.value.trim():"";
   state.studentName=name;
-  state.idx=0; state.score=0; state.wrong=[];
+  state.idx=0; state.score=0; state.wrong=[]; state.answers=[];
   state.picked=-1; state.answered=false;
   state.mode="play";
   render();
 };
 
-/* ===== 答题页 ===== */
+/* ===== 答题页（学生端不显示对错与正确答案） ===== */
 function renderPlay(){
   const q=QUESTIONS[state.idx];
   const total=QUESTIONS.length;
@@ -365,19 +380,10 @@ function renderPlay(){
   const judged=state.answered;
   const showNext=judged;
 
-  let fbClass="", fbHTML="";
-  if(judged){
-    fbClass = state.picked===ANSWERS[state.idx] ? "good" : "bad";
-    fbHTML=`
-      <div class="verdict"><span class="dot">${state.picked===ANSWERS[state.idx]?"✓":"✕"}</span>
-        ${state.picked===ANSWERS[state.idx]?"回答正确！":"回答错误，正确答案是 <b>"+LETTERS[ANSWERS[state.idx]]+"（"+q.opts[ANSWERS[state.idx]]+"）</b>"}</div>`;
-  }
-
   const optsHTML = q.opts.map((o,i)=>{
     let cls="option-btn";
     if(judged){
-      if(i===ANSWERS[state.idx]) cls+=" right";
-      else if(i===state.picked) cls+=" wrong";
+      if(i===state.picked) cls+=" picked";
     }
     return `<button class="${cls}" ${judged?"disabled":""} onclick="pickAns(${i})">${LETTERS[i]}. ${o}</button>`;
   }).join("");
@@ -385,7 +391,7 @@ function renderPlay(){
   app.innerHTML=`
     <div class="topbar">
       <div class="lv">${state.studentClass?state.studentClass+" · ":""}${state.studentName} · 第 ${state.idx+1} 题 / 共 ${total} 题</div>
-      <div class="score">得分 <b>${state.score}</b></div>
+      <div class="score">已答 <b>${state.answers.length}</b> / ${total}</div>
     </div>
     <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
     <div class="card qcard">
@@ -393,9 +399,8 @@ function renderPlay(){
       <div class="stem">${state.idx+1}. ${q.q}</div>
       <div class="claims">${q.claims.map((c,i)=>`<div class="claim"><span class="n">${i+1}.</span>${c}</div>`).join("")}</div>
       <div class="options">${optsHTML}</div>
-      <div class="feedback ${judged?"show "+fbClass:""}">${fbHTML}</div>
       <div class="next-row ${showNext?"show":""}">
-        <button class="btn" onclick="nextQ()">${state.idx+1>=total?"查看成绩":"下一题 →"}</button>
+        <button class="btn" onclick="nextQ()">${state.idx+1>=total?"提交答卷":"下一题 →"}</button>
       </div>
     </div>`;
   if(judged){
@@ -408,14 +413,9 @@ function renderPlay(){
 
 window.pickAns = function(i){
   if(state.answered) return;
-  const q=QUESTIONS[state.idx];
   state.picked=i;
   state.answered=true;
-  if(i===ANSWERS[state.idx]){
-    state.score+=1;
-  }else{
-    state.wrong.push({num:state.idx+1, q:q.q, right:LETTERS[ANSWERS[state.idx]]+"（"+q.opts[ANSWERS[state.idx]]+"）", your:LETTERS[i]+"（"+q.opts[i]+"）"});
-  }
+  state.answers.push(LETTERS[i]);   // 记录所选，不判分、不提示对错
   renderPlay();
 };
 
@@ -425,50 +425,20 @@ window.nextQ = function(){
   render();
 };
 
-/* ===== 学生结算页 ===== */
+/* ===== 学生提交页（不显示得分与正确答案，成绩交老师判断） ===== */
 function renderDone(){
   const total=QUESTIONS.length;
-  const wj=state.wrong.length;
-  const right=total-wj;
-  const rate=Math.round(right/total*100);
-  let stars=1;
-  if(rate>=90) stars=3; else if(rate>=70) stars=2;
-  let title,desc;
-  if(stars===3){title="满分风采！";desc="哲学选择题掌握得非常扎实。";}
-  else if(stars===2){title="表现不错！";desc="看看错题，争取全对。";}
-  else{title="答题完成";desc="建议把错题再过一遍，重新挑战。";}
-  let starsHTML="";
-  for(let i=1;i<=3;i++) starsHTML+=`<span class="${i<=stars?"on":""}">★</span>`;
-
-  let review="";
-  if(wj){
-    review=`<div class="review"><h3>错题回顾</h3>`;
-    state.wrong.forEach(w=>{
-      review+=`<div class="item"><div class="q">${w.num}. ${w.q}</div>
-        <div>你选了 <span class="tag-w">${w.your}</span> ｜ 正确答案：<b>${w.right}</b></div></div>`;
-    });
-    review+=`</div>`;
-  }else{
-    review=`<div class="review"><div style="text-align:center;color:var(--good);font-weight:600;padding:10px">全部答对，一道错题都没有！</div></div>`;
-  }
-
-  const wrongNums=state.wrong.map(w=>w.num).join(",");
-  const rec={name:state.studentName,cls:state.studentClass,score:state.score,right:right,total:total,rate:rate,wrongNums:wrongNums};
-  let uploadBox=`<div class="upload-box" id="uploadBox">正在自动提交成绩…</div>`;
+  const answers=(state.answers.length===total)?state.answers.join(""):"";
+  const rec={name:state.studentName,cls:state.studentClass,answers:answers,total:total};
+  let uploadBox=`<div class="upload-box" id="uploadBox">正在自动提交答卷…</div>`;
 
   app.innerHTML=`
     <div class="card result">
       <div class="trophy">🏁</div>
-      <h2>${title}</h2>
-      <div class="desc">${desc}</div>
-      <div class="stars">${starsHTML}</div>
-      <div class="grid">
-        <div class="box"><div class="n">${state.score}</div><div class="l">总分</div></div>
-        <div class="box"><div class="n">${right}/${total}</div><div class="l">答对</div></div>
-        <div class="box"><div class="n">${rate}%</div><div class="l">正确率</div></div>
-      </div>
+      <h2>答题完成！</h2>
+      <div class="desc">你的答卷已提交给老师，老师批改后可在后台查看成绩</div>
+      <div class="review"><div style="text-align:center;color:var(--ink-soft);font-weight:600;padding:10px">共 ${total} 题 · 已全部作答</div></div>
       ${uploadBox}
-      ${review}
       <div class="btn-row" style="margin-top:16px">
         <button class="btn" onclick="restartStudent()">再答一次</button>
         <button class="btn ghost" onclick="state.mode='start';render()">返回首页</button>
@@ -486,7 +456,7 @@ function renderDone(){
 }
 
 window.restartStudent = function(){
-  state.idx=0; state.score=0; state.wrong=[];
+  state.idx=0; state.score=0; state.wrong=[]; state.answers=[];
   state.picked=-1; state.answered=false;
   state.mode="play";
   render();
